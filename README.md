@@ -6,24 +6,23 @@
 
 - **历史扫描**：从指定区块号开始扫描，支持并发批量拉取
 - **断点续传**：程序重启后自动从上次处理的区块继续
-- **实时订阅**：历史扫描完成后通过 WebSocket 订阅新区块
+- **实时订阅**：历史扫描完成后通过 WebSocket 订阅新区块（未实现）
 - **自动补块**：实时模式下断线重连后自动填补遗漏区块
-- **重组保护**：可配置确认数（confirmations）保护避免处理未确认区块
 
 ## 数据库索引能力
 
-| 查询需求 | 对应表 | 索引字段 |
-|---------|--------|---------|
-| 通过区块号查完整区块 | `blocks` | `number` (PK) |
-| 通过区块 Hash 查区块 | `blocks` | `hash` (UNIQUE) |
-| 通过交易 Hash 查交易 | `transactions` | `hash` (PK) |
-| 通过交易 Hash 查日志 | `transaction_logs` | `transaction_hash` |
-| 通过账户地址查所有交易 | `transactions` | `from_address`, `to_address` |
-| 通过账户地址查 ETH 变化 | `eth_transfers` | `from_address`, `to_address` |
-| 通过合约地址查 ERC-20 变化 | `erc20_transfers` | `contract_address` |
-| 查询 ERC-20 账户余额 | `erc20_balances` | `(contract_address, holder_address)` |
-| 通过合约地址查 ERC-721 变化 | `erc721_transfers` | `contract_address` |
-| 查询 ERC-721 账户持有数量 | `erc721_balances` | `(contract_address, holder_address)` |
+| 查询需求                | 对应表 | 索引字段 |
+|---------------------|--------|---------|
+| 通过区块号查完整区块          | `blocks` | `number` (PK) |
+| 通过区块 Hash 查区块       | `blocks` | `hash` (UNIQUE) |
+| 通过交易 Hash 查交易       | `transactions` | `hash` (PK) |
+| 通过交易 Hash 查日志       | `transaction_logs` | `transaction_hash` |
+| 通过账户地址查所有交易         | `transactions` | `from_address`, `to_address` |
+| 通过账户地址查 ETH 变化（未实现） | `eth_transfers` | `from_address`, `to_address` |
+| 通过合约地址查 ERC-20 变化   | `erc20_transfers` | `contract_address` |
+| 查询 ERC-20 账户余额      | `erc20_balances` | `(contract_address, holder_address)` |
+| 通过合约地址查 ERC-721 变化  | `erc721_transfers` | `contract_address` |
+| 查询 ERC-721 账户持有数量   | `erc721_balances` | `(contract_address, holder_address)` |
 
 ## 技术栈
 
@@ -35,25 +34,9 @@
 
 ## 快速开始
 
-### 1. 启动 PostgreSQL
-
-```bash
-docker compose up -d
-```
-
-等待数据库 healthy 后继续：
-
-```bash
-docker compose ps   # 确认 Status 为 healthy
-```
-
-### 2. 配置
+### 1. 配置
 
 复制配置模板并填写你的 RPC 节点地址：
-
-```bash
-cp config.toml.example config.toml   # 或直接编辑 config.toml
-```
 
 `config.toml` 关键字段说明：
 
@@ -97,29 +80,6 @@ cargo build --release
 RUST_LOG=evm_indexer=debug cargo run   # 详细（含每笔 Transfer 解码）
 RUST_LOG=evm_indexer=info  cargo run   # 标准（每个区块一行日志）
 RUST_LOG=evm_indexer=warn  cargo run   # 仅警告和错误
-```
-
-## 项目结构
-
-```
-evm-indexer/
-├── config.toml              # 主配置文件
-├── docker-compose.yml       # PostgreSQL 容器
-├── migrations/
-│   └── 001_create_tables.sql  # 数据库建表 + 索引
-└── src/
-    ├── main.rs              # 入口：历史扫描 → 实时订阅
-    ├── config.rs            # 配置加载（文件 + 环境变量）
-    ├── models.rs            # 数据库模型结构体
-    ├── db/
-    │   ├── queries.rs       # SQL 常量
-    │   └── repo.rs          # 数据库操作封装 + Insert DTO
-    ├── processor/
-    │   ├── block_processor.rs  # 区块 → 数据库写入逻辑
-    │   └── event_decoder.rs    # ERC-20 / ERC-721 Transfer 解码
-    └── scanner/
-        ├── historical.rs    # 历史区块并发扫描
-        └── live.rs          # WebSocket 实时订阅
 ```
 
 ## 常用查询示例
@@ -177,10 +137,3 @@ SELECT * FROM sync_state;
 
 重启后程序自动读取此值，从 `last_block + 1` 继续处理，无需手动干预。
 
-## 生产部署建议
-
-1. **RPC 节点**：建议使用私有归档节点（Alchemy / QuickNode 存档计划），避免 Rate Limit。
-2. **并发数**：根据 RPC 节点的限速调整 `concurrent_blocks`，公共节点建议设为 `3~5`。
-3. **确认数**：主网建议 `12`，测试网可设为 `1`。
-4. **数据库**：大规模索引建议为 `blocks.timestamp`、`transactions.from_address` 等字段做 BRIN 索引，效果优于 B-tree。
-5. **systemd 服务**：生产环境建议用 systemd 或 supervisor 管理进程自动重启。
