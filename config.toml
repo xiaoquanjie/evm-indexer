@@ -1,0 +1,20 @@
+# EVM Indexer Configuration
+
+[rpc]
+# HTTP RPC endpoint for historical scanning
+http_url = "https://sepolia.infura.io/v3/17db6acc5bc44bd4b909cf3ed3579de8"
+# WebSocket endpoint for live block subscription
+ws_url = "wss://sepolia.infura.io/ws/v3/17db6acc5bc44bd4b909cf3ed3579de8"
+
+[database]
+url = "postgresql://postgres:123456@localhost:5432/evm_indexer"
+# Maximum database connection pool size
+max_connections = 10
+
+[indexer]
+# Block number to start scanning from (0 = genesis)
+start_block = 10474842
+# Number of blocks to fetch concurrently during historical scan
+concurrent_blocks = 10
+# Number of confirmations to wait before processing (re-org protection)
+confirmations = 12

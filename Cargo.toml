@@ -1,0 +1,60 @@
+[package]
+name = "evm-indexer"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.50.0", features = ["full"] }
+
+# EVM / Ethereum
+alloy = { version = "1.7.3", features = [
+    "full",
+    "provider-ws",
+    "provider-http",
+    "rpc-types",
+    "rpc-types-eth",
+    "contract",
+    "sol-types",
+    "json-abi",
+] }
+
+# Database
+sqlx = { version = "0.8", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "bigdecimal",
+    "chrono",
+    "macros",
+    "migrate",
+] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Configuration
+config = "0.14"
+toml = "0.8"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Utilities
+bigdecimal = { version = "0.4", features = ["serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+tokio-stream = "0.1"
+num-bigint = "0.4"
+num-traits = "0.2"
+hex = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
