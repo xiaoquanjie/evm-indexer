@@ -23,6 +23,8 @@ impl LiveScanner {
 pub enum SubOption {
     /// 从哪个区块开始订阅
     Block(u64),
+    /// 从哪个区块开始订阅函数
+    Call(u64, Address, String),
     /// 从哪个区块开始订阅哪个地址
     Address(u64, Address),
     /// 从哪个区块开始订阅哪个事件
