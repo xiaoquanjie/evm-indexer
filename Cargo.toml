@@ -35,7 +35,7 @@ serde_json = "1"
 
 # Configuration
 config = "0.14"
-toml = "0.8"
+#toml = "0.8"
 
 # Logging
 tracing = "0.1"
@@ -43,13 +43,13 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 
 # Error handling
 anyhow = "1"
-thiserror = "2"
+#thiserror = "2"
 
 # Utilities
 bigdecimal = { version = "0.4", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
-tokio-stream = "0.1"
+#tokio-stream = "0.1"
 num-bigint = "0.4"
 num-traits = "0.2"
 hex = "0.4"
