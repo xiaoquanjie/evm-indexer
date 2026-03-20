@@ -133,11 +133,10 @@ impl BlockSubscribe {
                 self.sub = Some(sub);
                 continue;
             }
-
-            // 还没开始订阅
+            
             // 取当前得最高位置
             let height = self.opt.provider.get_block_number().await?;
-            println!("height:{height}");
+
             // 当前位置距离最高位进入可接受范围
             if start + RANGE >= height {
                 // 开始创建订阅
@@ -155,7 +154,7 @@ impl BlockSubscribe {
                     let mut buf = self
                         .get_blocks_range(start, to, self.opt.concurrent)
                         .await?;
-                    if dist <= 2 {
+                    if dist <= RANGE {
                         // 将h插入buf后面
                         buf = Box::new(buf.chain(Some(h)));
                         // 距离不远可以保留订阅，否则就要丢弃掉
