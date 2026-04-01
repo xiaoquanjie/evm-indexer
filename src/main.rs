@@ -52,9 +52,9 @@ async fn main() -> Result<()> {
     // 扫描历史
     // scan_history(config).await?;
 
-    scan_live2(config).await?;
+    //scan_live2(config.clone()).await?;
 
-    //scan_events(config).await?;
+    scan_events(config.clone()).await?;
     Ok(())
 }
 
@@ -135,6 +135,7 @@ async fn scan_live2(config: AppConfig) -> Result<()> {
     let sub = live
         .subscribe()
         .concurrent(10)
+        .block_range(50)
         .start_block(Some(10565933-30))
         //.end_block(Some(10564501+10))
         .build();

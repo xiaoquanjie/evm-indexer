@@ -8,6 +8,8 @@ pub trait Sub<T> {
     async fn recv(&mut self) -> anyhow::Result<Option<T>>;
 
     fn block_number_from_data(data: &T) -> u64;
+    
+    fn block(&self) -> Option<u64>;
 }
 
 pub struct Subscription<O, T> {
@@ -32,12 +34,16 @@ impl<O, T> Subscription<O, T> {
         futures::stream::unfold(self, |mut sub| async {
             match sub.recv().await {
                 Ok(None) => None,
-                Ok(Some(item)) => Some((Ok(item), sub)),
+                Ok(Some(item)) => {
+                    // for test
+                    println!("............... {:?}", sub.block());
+                    Some((Ok(item), sub))
+                },
                 Err(e) => Some((Err(anyhow::Error::from(e)), sub)),
             }
         })
     }
-
+    
     pub(super) fn next_buf(&mut self) -> Option<T> {
         if let Some(mut iter) = self.buf.take() {
             let d = iter.next()?;
@@ -48,17 +54,16 @@ impl<O, T> Subscription<O, T> {
         }
     }
 
-    pub(super) async fn next_sub(&mut self) -> anyhow::Result<bool>
+    pub(super) async fn next_sub(&mut self) -> anyhow::Result<Option<T>>
     where
         T: DeserializeOwned + 'static,
     {
         if let Some(mut sub) = self.sub.take() {
             let d = sub.recv().await?;
-            self.buf = Some(Box::new([d].into_iter()));
             self.sub = Some(sub);
-            Ok(true)
+            Ok(Some(d))
         } else {
-            Ok(false)
+            Ok(None)
         }
     }
 
@@ -92,9 +97,10 @@ impl<O, T> Subscription<O, T> {
             }
 
             // 有了订阅就继续读取订阅
-            let has = self.next_sub().await?;
-            if has {
-                continue;
+            if let Some(d) =  self.next_sub().await? {
+                let num = Self::block_number_from_data(&d);
+                self.update_start_block(num+1);
+                return Ok(Some(d));
             }
 
             // 取当前得最高位置
@@ -127,9 +133,11 @@ impl<O, T> Subscription<O, T> {
                         buf = Box::new(buf.chain(Some(d)));
                         // 距离不远可以保留订阅，否则就要丢弃掉
                         self.sub = Some(sub);
+                        self.update_start_block(num+1);
+                    } else {
+                        self.update_start_block(to+1);
                     }
                     self.buf = Some(buf);
-                    self.update_start_block(to+1);
                 }
             } else {
                 // 差值过大，继续读取历史数据
@@ -211,13 +219,9 @@ trait WithSubOptionExt: WithSubOption {
             }
             Some(s) => s,
         };
-        let end = match opt.end_block {
-            None => {
-                opt.end_block = Some(u64::MAX);
-                u64::MAX
-            }
-            Some(e) => e,
-        };
+        let end = opt.end_block.unwrap_or_else(|| {
+            u64::MAX
+        });
 
         Ok((start, end))
     }

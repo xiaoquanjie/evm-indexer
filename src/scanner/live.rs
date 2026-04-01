@@ -109,4 +109,8 @@ impl super::subscription::Sub<Header> for super::subscription::Subscription<Bloc
     fn block_number_from_data(data: &Header) -> u64 {
         data.number
     }
+
+    fn block(&self) -> Option<u64> {
+        self.opt.inner.start_block
+    }
 }

@@ -141,4 +141,8 @@ impl super::subscription::Sub<Log> for super::subscription::Subscription<EventOp
     fn block_number_from_data(data: &Log) -> u64 {
         data.block_number.unwrap()
     }
+
+    fn block(&self) -> Option<u64> {
+        self.opt.inner.start_block
+    }
 }
